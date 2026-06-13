@@ -1,0 +1,264 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "combined_ner_results_with_text.schema.json",
+  "title": "Combined NER Results with Text",
+  "description": "Schema for the combined NER (Named Entity Recognition) results file containing multiple NER sources with ground truth labels for multilingual resume data",
+  "type": "array",
+  "items": {
+    "$ref": "#/$defs/Entry"
+  },
+  "$defs": {
+    "Entry": {
+      "type": "object",
+      "description": "A single entry representing a resume/document with NER results from multiple sources",
+      "required": ["index", "id", "text", "groundtruth_labels", "spanish_directly", "bable_ner", "llama_translated"],
+      "properties": {
+        "index": {
+          "type": "integer",
+          "description": "Zero-based index of the entry in the dataset",
+          "minimum": 0
+        },
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the entry (e.g., 'Indeed_1', 'Indeed_2')"
+        },
+        "text": {
+          "type": "string",
+          "description": "Original English text of the resume/document"
+        },
+        "groundtruth_labels": {
+          "type": "array",
+          "description": "Array of ground truth entity annotations",
+          "items": {
+            "$ref": "#/$defs/GroundTruthLabel"
+          }
+        },
+        "spanish_directly": {
+          "$ref": "#/$defs/SpanishDirectlyResult"
+        },
+        "bable_ner": {
+          "$ref": "#/$defs/BableNerResult"
+        },
+        "llama_translated": {
+          "$ref": "#/$defs/LlamaTranslatedResult"
+        }
+      }
+    },
+    "GroundTruthLabel": {
+      "type": "array",
+      "description": "A ground truth entity annotation as a tuple: [start_position, end_position, entity_type, text]",
+      "items": [
+        {
+          "type": "integer",
+          "description": "Start character position in the original text",
+          "minimum": 0
+        },
+        {
+          "type": "integer",
+          "description": "End character position in the original text",
+          "minimum": 0
+        },
+        {
+          "type": "string",
+          "description": "Entity type/category",
+          "enum": [
+            "Name",
+            "Designation",
+            "Location",
+            "Email Address",
+            "Companies worked at",
+            "Years of Experience",
+            "College Name",
+            "Degree",
+            "Graduation Year",
+            "Tech Tools",
+            "Job Specific Skills",
+            "Soft Skills"
+          ]
+        },
+        {
+          "type": "string",
+          "description": "The actual text of the entity"
+        }
+      ],
+      "minItems": 4,
+      "maxItems": 4
+    },
+    "SpanishDirectlyResult": {
+      "type": "object",
+      "description": "NER results from direct Spanish translation approach",
+      "required": ["spanish_text", "tokens", "ners", "mappings"],
+      "properties": {
+        "spanish_text": {
+          "type": "string",
+          "description": "The text translated to Spanish"
+        },
+        "tokens": {
+          "type": "array",
+          "description": "Array of tokenized words from the Spanish text",
+          "items": {
+            "type": "string"
+          }
+        },
+        "ners": {
+          "type": "array",
+          "description": "Array of NER labels corresponding to each token (same length as tokens array)",
+          "items": {
+            "$ref": "#/$defs/NerLabel"
+          }
+        },
+        "mappings": {
+          "type": "array",
+          "description": "Array of character position mappings for each token: [start, end]",
+          "items": {
+            "$ref": "#/$defs/PositionMapping"
+          }
+        }
+      }
+    },
+    "BableNerResult": {
+      "type": "object",
+      "description": "NER results from Bable (BERT-based NER) model on translated text",
+      "required": ["text", "ner_tags", "ner_results"],
+      "properties": {
+        "text": {
+          "type": "string",
+          "description": "The Spanish translated text used for NER"
+        },
+        "ner_tags": {
+          "type": "array",
+          "description": "Array of NER tags for tokenized text using standard NER categories (PER, LOC, ORG, MISC, O)",
+          "items": {
+            "$ref": "#/$defs/StandardNerTag"
+          }
+        },
+        "ner_results": {
+          "type": "array",
+          "description": "Array of detected named entities with span and confidence information",
+          "items": {
+            "$ref": "#/$defs/NerEntityResult"
+          }
+        }
+      }
+    },
+    "LlamaTranslatedResult": {
+      "type": "object",
+      "description": "NER results from LLaMA model with back-translation approach",
+      "required": ["original", "back_translated", "ners", "mappings"],
+      "properties": {
+        "original": {
+          "type": "string",
+          "description": "Original English text"
+        },
+        "back_translated": {
+          "type": "object",
+          "description": "Back-translated versions of the text",
+          "required": ["en", "es"],
+          "properties": {
+            "en": {
+              "type": "string",
+              "description": "English back-translation"
+            },
+            "es": {
+              "type": "string",
+              "description": "Spanish translation"
+            }
+          }
+        },
+        "ners": {
+          "type": "array",
+          "description": "Array of NER labels for each token",
+          "items": {
+            "$ref": "#/$defs/NerLabel"
+          }
+        },
+        "mappings": {
+          "type": "array",
+          "description": "Array of character position mappings for each token: [start, end]",
+          "items": {
+            "$ref": "#/$defs/PositionMapping"
+          }
+        }
+      }
+    },
+    "NerLabel": {
+      "type": "string",
+      "description": "Named Entity Recognition label for resume/CV entities",
+      "enum": [
+        "O",
+        "Name",
+        "Designation",
+        "Location",
+        "Email Address",
+        "Companies worked at",
+        "Years of Experience",
+        "College Name",
+        "Degree",
+        "Graduation Year",
+        "Tech Tools",
+        "Job Specific Skills",
+        "Soft Skills"
+      ]
+    },
+    "StandardNerTag": {
+      "type": "string",
+      "description": "Standard NER tag categories (CoNLL format)",
+      "enum": [
+        "O",
+        "PER",
+        "LOC",
+        "ORG",
+        "MISC"
+      ]
+    },
+    "PositionMapping": {
+      "type": "array",
+      "description": "Character position mapping as [start, end] tuple",
+      "items": [
+        {
+          "type": "integer",
+          "description": "Start character position",
+          "minimum": 0
+        },
+        {
+          "type": "integer",
+          "description": "End character position",
+          "minimum": 0
+        }
+      ],
+      "minItems": 2,
+      "maxItems": 2
+    },
+    "NerEntityResult": {
+      "type": "object",
+      "description": "A detected named entity with span and confidence information",
+      "required": ["start", "end", "entity_group", "word", "score"],
+      "properties": {
+        "start": {
+          "type": "integer",
+          "description": "Start character position of the entity in the text",
+          "minimum": 0
+        },
+        "end": {
+          "type": "integer",
+          "description": "End character position of the entity in the text",
+          "minimum": 0
+        },
+        "entity_group": {
+          "$ref": "#/$defs/StandardNerTag",
+          "description": "The entity category (PER, LOC, ORG, MISC)"
+        },
+        "word": {
+          "type": "string",
+          "description": "The detected entity text"
+        },
+        "score": {
+          "type": "number",
+          "description": "Confidence score of the entity detection (0.0 to 1.0)",
+          "minimum": 0,
+          "maximum": 1
+        }
+      }
+    }
+  }
+}
